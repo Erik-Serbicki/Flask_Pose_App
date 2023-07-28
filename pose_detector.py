@@ -14,7 +14,7 @@ mp_pose = mp.solutions.pose
 lightblue = (220, 163 ,33)
 bluegreen = (121, 207, 29)
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(-1)
 
 def record(out):
     global rec_frame
