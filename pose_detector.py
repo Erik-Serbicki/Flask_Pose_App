@@ -14,7 +14,7 @@ mp_pose = mp.solutions.pose
 lightblue = (220, 163 ,33)
 bluegreen = (121, 207, 29)
 
-cap = cv2.VideoCapture(-1)
+# cap = cv2.VideoCapture(-1)
 
 def record(out):
     global rec_frame
@@ -67,3 +67,15 @@ def gen_frames():
 
             else: 
                 pass
+
+def img_pose():
+    image = cv2.imread("assets/thrust1_pic.png")
+    with mp_pose.Pose(min_detection_confidence=0.2, min_tracking_confidence=0.2) as pose:
+        results = pose.process(image)
+        mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS, 
+                                        mp_drawing.DrawingSpec(color=lightblue, thickness=2, circle_radius=2),
+                                        mp_drawing.DrawingSpec(color=bluegreen, thickness=2, circle_radius=2)
+                                        )
+        ret, buffer = cv2.imencode('.png', cv2.flip(image,1))
+        frame = buffer.tobytes()
+        return frame     
