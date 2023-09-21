@@ -9,10 +9,10 @@
         <link rel="stylesheet" href="static/style.css">
     </head>
     <body>
-        
+        <script src="{{url_for('static', filename='script.js')}}"></script>
         <h1> Hema AI</h1>
-        <img src="{{ url_for('image_pose')}}">
-        
-        
+        <button onclick="restartVideo()">Restart Video</button>
+        <img id="image" src="{{url_for('video_feed')}}" />
+        <p id="debug"></p>
     </body>
 </html>
