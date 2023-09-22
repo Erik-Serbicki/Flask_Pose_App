@@ -1,4 +1,4 @@
-from flask import Flask, Response, render_template, request, make_response, jsonify
+from flask import Flask, Response, render_template, request, make_response, jsonify, redirect, url_for
 from pose_detector import *
 import pyrebase
 import tempfile
@@ -42,7 +42,12 @@ def success():
         temp = tempfile.NamedTemporaryFile(delete=False)
         f.save(temp.name)
         storage.child(f"{uploadVidPath}/{f.filename}").put(temp.name)
+        process_video(f.filename)
         return render_template("uploaded.html", name=f.filename) 
+
+@app.route("/display/<filename>")
+def display_video(filename):
+    pass
 
 
 app.run(host="0.0.0.0")

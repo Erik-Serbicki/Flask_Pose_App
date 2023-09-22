@@ -5,6 +5,27 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import time
+import pyrebase
+import tempfile
+
+# Set up firebase config
+firebaseConfig = {"apiKey": "AIzaSyDlfb4ifsyyf4q92AidCqS4R-7_RtcfcaI",
+  "authDomain": "hema-ai.firebaseapp.com",
+  "projectId": "hema-ai",
+  "storageBucket": "hema-ai.appspot.com",
+  "messagingSenderId": "647236692047",
+  "appId": "1:647236692047:web:b91bd96b7568ee01c7223a",
+  "measurementId": "G-5DCJR1PHVN",
+  "databaseURL":"",
+  "serviceAccount":"C://Users/eriks/Documents/FirebaseAuth/hema-ai-firebase-admin.json"}
+
+# Initialize Firebase and cloud storage
+firebase = pyrebase.initialize_app(firebaseConfig)
+storage = firebase.storage()
+
+# Set path within storage
+uploadVidPath = "videos"
+proccessedVidPath = "processed"
 
 # Set up mediapipe drawing (for display) and pose (for calculation)
 mp_drawing = mp.solutions.drawing_utils
@@ -64,6 +85,7 @@ def gen_frames():
             else: 
                 pass
 
+# Create pose for one image
 def img_pose():
     cap = cv2.VideoCapture("assets/thrust1.mp4")  
     frames = []
@@ -86,3 +108,54 @@ def img_pose():
     cap.release()
     return frames[0]   
 
+# Process a video from Firebase
+def process_video(path):
+
+    # Create temporary file to store video from firebase
+    temp_download = tempfile.NamedTemporaryFile(delete=False)
+
+    # Create temporary file to store video output before saving to firebase
+    temp_upload = tempfile.NamedTemporaryFile(delete=False)
+
+    # Download the firebase video and store it in the temporary file
+    storage.child(f"{uploadVidPath}/{path}").download(path=tempfile.gettempdir(), filename=temp_download.name)
+
+    # Create cv2 capture object from the downloaded file
+    cap = cv2.VideoCapture(temp_download.name)
+
+    # Get video properties to use for videowriter output
+    size = (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+    fourcc = int(cap.get(cv2.CAP_PROP_FOURCC))
+    fps = cap.get(cv2.CAP_PROP_FPS)
+
+    out = cv2.VideoWriter(filename=temp_upload.name, fourcc=fourcc, fps=fps, frameSize=size)
+
+
+    with mp_pose.Pose(min_detection_confidence=0.2, min_tracking_confidence=0.2) as pose:
+        while True:
+            success, frame = cap.read()
+            if success:
+                # Recolor iamge to RGB
+                image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+                # Make detection
+                results = pose.process(image)
+
+                # Recolor back to BGR
+                image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+                try:
+                    landmarks = results.pose_landmarks.landmarks
+                except:
+                    pass
+
+                # Display lines on image
+                mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
+                                        mp_drawing.DrawingSpec(color=lightblue, thickness=2, circle_radius=2),
+                                        mp_drawing.DrawingSpec(color=bluegreen, thickness=2, circle_radius=2)
+                                        )
+                out.write(image)
+            else:
+                break
+                  
+    storage.child(f"{proccessedVidPath}/{path}").put(temp_upload.name)
