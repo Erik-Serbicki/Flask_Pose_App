@@ -85,3 +85,4 @@ def img_pose():
         cap.set(cv2.CAP_PROP_POS_FRAMES, i)
     cap.release()
     return frames[0]   
+
